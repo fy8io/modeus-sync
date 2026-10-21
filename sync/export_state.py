@@ -1,18 +1,20 @@
-"""Снять cookies Modeus в base64 для секрета MODEUS_STATE (запускать на ПК).
+"""Снять cookies Modeus + Microsoft SSO в base64 для секрета MODEUS_STATE.
 
 Использование:
-    python sync/export_state.py
+    python export_state.py
 
 Скрипт откроет сохранённый профиль Playwright, зайдёт на страницу расписания
 и сохранит base64 в файл modeus_state.b64. Содержимое файла нужно вставить
 в GitHub Secret MODEUS_STATE.
+
+Важно: сохраняются не только cookies Modeus, но и cookies Microsoft SSO.
+Без них облако не сможет молча переавторизоваться, когда сессия WSO2 истечёт.
 """
 from __future__ import annotations
 
 import base64
 import json
 import os
-import time
 from pathlib import Path
 
 from playwright.sync_api import sync_playwright
@@ -35,10 +37,15 @@ def main() -> int:
         state = ctx.storage_state()
         ctx.close()
 
-    cookies = [c for c in state["cookies"] if "modeus" in c["domain"]]
+    cookies = [c for c in state["cookies"] if "yandex" not in c["domain"]]
     if not cookies:
-        print("Cookies Modeus не найдены — войди заново: python sync.py --login")
+        print("Cookies не найдены — войди заново: python sync.py --login")
         return 1
+
+    ms = sum(1 for c in cookies if "microsoft" in c["domain"])
+    if not ms:
+        print("Внимание: cookies Microsoft SSO не найдены.")
+        print("Облако сможет работать, только пока жива сессия Modeus.")
 
     payload = json.dumps(
         {"cookies": cookies, "origins": []}, ensure_ascii=False, separators=(",", ":")
@@ -47,7 +54,7 @@ def main() -> int:
 
     out = Path("modeus_state.b64")
     out.write_text(b64, encoding="ascii")
-    print(f"Cookies: {len(cookies)}")
+    print(f"Cookies: {len(cookies)} (Microsoft: {ms})")
     print(f"Размер base64: {len(b64)} символов")
     print(f"Сохранено: {out.resolve()}")
     print("Вставь содержимое файла в GitHub Secret MODEUS_STATE.")
