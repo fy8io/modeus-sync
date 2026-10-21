@@ -22,31 +22,34 @@ Modeus API → cloud_sync.py → gist (schedule.ics, schedule.json)
 
 | Секрет | Что внутри |
 |--------|------------|
-| `MODEUS_STATE` | base64 от storage_state с cookies Modeus |
+| `MODEUS_STATE` | base64 от storage_state с cookies Modeus + Microsoft SSO |
 | `GH_PAT` | GitHub-токен с правом `gist` |
 | `TELEGRAM_BOT_TOKEN` | токен бота от @BotFather |
 | `TELEGRAM_CHAT_ID` | id чата для уведомлений |
 
-`MODEUS_STATE` — это не пароль, а cookies текущей сессии Modeus. Они лежат
-в зашифрованном секрете и в логи не попадают.
+`MODEUS_STATE` — это не пароль, а cookies текущей сессии Modeus и Microsoft SSO.
+Они лежат в зашифрованном секрете и в логи не попадают. Microsoft-cookies нужны,
+чтобы облако могло молча переавторизоваться, когда сессия WSO2 истечёт.
 
 ## Как обновить сессию Modeus
 
-Сессия живёт, пока GitHub Actions ходит в Modeus каждые 30 минут. Если job
-упал с ошибкой «Не удалось получить токен Modeus»:
+Сессия WSO2 со временем истекает. Если `MODEUS_STATE` содержит cookies Microsoft
+SSO, облако обычно переавторизуется само. Если job всё же упал с ошибкой
+«Не удалось получить токен Modeus»:
 
-1. На компьютере войди в Modeus:
+1. На компьютере войди в Modeus (в папке локального проекта):
    ```
-   python sync.py --login
+   python modeus.py --login
    ```
-2. Сними свежие cookies:
+2. Сними свежие cookies и сразу обнови секрет:
    ```
-   python sync/export_state.py
+   python export_state.py --push
    ```
-3. Открой `modeus_state.b64`, скопируй содержимое.
-4. GitHub → репозиторий → Settings → Secrets and variables → Actions →
-   `MODEUS_STATE` → Update.
-5. Запусти workflow вручную: Actions → **Sync schedule** → **Run workflow**.
+   Скрипт сохраняет и Modeus, и Microsoft SSO cookies. Без `--push` он просто
+   создаст `modeus_state.b64` — тогда скопируй его содержимое в секрет вручную.
+3. Если `--push` не сработал: GitHub → репозиторий → Settings → Secrets and
+   variables → Actions → `MODEUS_STATE` → Update.
+4. Запусти workflow вручную: Actions → **Sync schedule** → **Run workflow**.
 
 ## Уведомления в Telegram
 
@@ -89,5 +92,5 @@ python sync/cloud_sync.py --dry-run
 | `sync/icsgen.py` | сборка `.ics` |
 | `sync/gist.py` | публикация и чтение gist |
 | `sync/config.json` | id gist, горизонт, исключения |
-| `sync/export_state.py` | снятие cookies для секрета (запускать на ПК) |
+| `sync/export_state.py` | снятие cookies Modeus + Microsoft SSO для секрета (на ПК) |
 | `.github/workflows/sync.yml` | расписание запусков |
