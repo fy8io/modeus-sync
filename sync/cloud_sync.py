@@ -23,6 +23,7 @@ sys.path.insert(0, str(BASE))
 import gist  # noqa: E402
 import icsgen  # noqa: E402
 import modeus_api  # noqa: E402
+import notify  # noqa: E402
 import sitedata  # noqa: E402
 
 
@@ -73,8 +74,17 @@ def main() -> int:
         except Exception as exc:  # noqa: BLE001
             log(f"Предупреждение: архив не прочитан ({exc})")
 
-    merged = sitedata.merge_records(old, sitedata.enrich(data), exclude=excluded)
+    records = sitedata.enrich(data)
+    merged = sitedata.merge_records(old, records, exclude=excluded)
     log(f"Архив после слияния: {len(merged)}")
+
+    if old:
+        changes = notify.diff(old, records, days_ahead=days)
+        if changes:
+            log(f"Изменений для уведомления: {len(changes)}")
+    else:
+        changes = []
+        log("Первый запуск: уведомления об изменениях пропущены")
 
     cutoff = (date.today() - timedelta(days=7)).isoformat()
     ics_events = [e for e in data["events"] if (e.get("start") or "")[:10] >= cutoff]
@@ -83,12 +93,19 @@ def main() -> int:
     log(f"ICS: {len(ics_text.encode('utf-8'))} байт, JSON: {len(schedule_json.encode('utf-8'))} байт")
 
     if dry:
-        log("dry-run: публикация пропущена")
+        log(f"dry-run: публикация пропущена (изменений: {len(changes)})")
         return 0
 
     info = gist.publish(token, ics_text, gist_id or None, extra={"schedule.json": schedule_json})
     log(f"Gist обновлён: {info['html_url'] or info['id']}")
     log(f"Ссылка для Outlook: {info['raw_url']}")
+
+    if changes:
+        try:
+            if notify.notify_changes(changes):
+                log("Telegram: уведомление отправлено")
+        except Exception as exc:  # noqa: BLE001
+            log(f"Telegram: не отправлено ({exc})")
     return 0
 
 

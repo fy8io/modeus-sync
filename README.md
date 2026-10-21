@@ -24,6 +24,8 @@ Modeus API → cloud_sync.py → gist (schedule.ics, schedule.json)
 |--------|------------|
 | `MODEUS_STATE` | base64 от storage_state с cookies Modeus |
 | `GH_PAT` | GitHub-токен с правом `gist` |
+| `TELEGRAM_BOT_TOKEN` | токен бота от @BotFather |
+| `TELEGRAM_CHAT_ID` | id чата для уведомлений |
 
 `MODEUS_STATE` — это не пароль, а cookies текущей сессии Modeus. Они лежат
 в зашифрованном секрете и в логи не попадают.
@@ -45,6 +47,23 @@ Modeus API → cloud_sync.py → gist (schedule.ics, schedule.json)
 4. GitHub → репозиторий → Settings → Secrets and variables → Actions →
    `MODEUS_STATE` → Update.
 5. Запусти workflow вручную: Actions → **Sync schedule** → **Run workflow**.
+
+## Уведомления в Telegram
+
+Бот присылает:
+
+- переносы, отмены и новые пары;
+- смену аудитории и преподавателя;
+- сообщение, если синхронизация упала (например, истекла сессия).
+
+Как подключить:
+
+1. Открой **@BotFather** → `/newbot` → придумай имя → получи токен.
+2. Напиши своему боту любое сообщение (нажми **Start**).
+3. Открой в браузере
+   `https://api.telegram.org/bot<ТОКЕН>/getUpdates` и найди `"chat":{"id":...}`.
+4. Добавь секреты `TELEGRAM_BOT_TOKEN` и `TELEGRAM_CHAT_ID`.
+5. Проверка: `python sync/notify.py --test`.
 
 ## Ручной запуск
 
