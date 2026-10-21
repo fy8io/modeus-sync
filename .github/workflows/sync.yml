@@ -57,10 +57,10 @@ jobs:
           else:
               print("heartbeat fresh")
           PY
-          if ! git diff --quiet -- sync/heartbeat.txt; then
+          git add sync/heartbeat.txt
+          if ! git diff --cached --quiet; then
             git config user.name "modeus-sync"
             git config user.email "modeus-sync@users.noreply.github.com"
-            git add sync/heartbeat.txt
             git commit -m "heartbeat $(date -u +%F)"
             git push
           fi
