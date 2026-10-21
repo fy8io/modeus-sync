@@ -4,6 +4,15 @@ on:
   schedule:
     - cron: "*/30 * * * *"
   workflow_dispatch:
+    inputs:
+      telegram_check:
+        description: "Показать chat_id из getUpdates"
+        type: boolean
+        default: false
+      telegram_test:
+        description: "Отправить тестовое сообщение"
+        type: boolean
+        default: false
 
 permissions:
   contents: write
@@ -29,6 +38,21 @@ jobs:
         run: |
           pip install -r sync/requirements.txt
           python -m playwright install --with-deps chromium
+
+      - name: Telegram check
+        if: ${{ inputs.telegram_check }}
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+        run: |
+          curl -s "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/getMe"; echo
+          curl -s "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/getUpdates"; echo
+
+      - name: Telegram test
+        if: ${{ inputs.telegram_test }}
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: python sync/notify.py --test
 
       - name: Sync Modeus -> gist
         env:
