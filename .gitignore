@@ -1,0 +1,7 @@
+modeus_state.b64
+modeus_state.json
+secrets.json
+sync.log
+__pycache__/
+*.pyc
+.venv/
