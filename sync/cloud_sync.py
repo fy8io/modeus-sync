@@ -1,7 +1,7 @@
 """Синхронизация расписания Modeus -> GitHub Gist. Запускается в GitHub Actions.
 
 Секреты:
-    MODEUS_STATE  base64(storage_state с cookies Modeus)
+    MODEUS_STATE  base64(storage_state с cookies Modeus + Microsoft SSO)
     GH_PAT        токен GitHub с правом gist
 
 Локальная проверка:
