@@ -1,7 +1,7 @@
 """Клиент API Modeus для GitHub Actions.
 
 В облаке нет профиля браузера: сессия восстанавливается из storage_state
-(cookies Modeus), который лежит в секрете MODEUS_STATE в base64.
+(cookies Modeus + Microsoft SSO), который лежит в секрете MODEUS_STATE в base64.
 Перехватываем заголовок Authorization у запроса расписания и дальше ходим
 обычным requests.
 """
